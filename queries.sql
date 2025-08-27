@@ -122,6 +122,7 @@ union
     count(*) as age_count
 from customers
 where age > 40)
+order by age_category
 ;
 
 -- 2 отчёт (customers_by_month)
