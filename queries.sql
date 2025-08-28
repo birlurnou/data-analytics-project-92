@@ -155,7 +155,7 @@ with tab as (
         c.first_name || ' ' || c.last_name as customer,
         concat(e.first_name, ' ', e.last_name) as seller,
         row_number() over (
-            partition by c.customer_id 
+            partition by c.customer_id
             order by s.sale_date
         ) as rn
     from sales as s
