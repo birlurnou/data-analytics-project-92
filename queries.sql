@@ -142,9 +142,9 @@ order by selling_month;
 
 /*
 
-Я создаю табличное выражение с данными покупателя, продавца и даты сделки, 
+Я создаю табличное выражение с данными покупателя, продавца и даты сделки,
 когда цена была равна 0,
-также добавляю оконную функцию row_number с сортировкой по дате, 
+также добавляю оконную функцию row_number с сортировкой по дате,
 чтобы в основном запросе были данные не всех покупок, а только одной первой.
 
 */
@@ -155,7 +155,8 @@ with tab as (
         c.first_name || ' ' || c.last_name as customer,
         concat(e.first_name, ' ', e.last_name) as seller,
         row_number() over (
-            partition by c.customer_id order by s.sale_date
+            partition by c.customer_id 
+            order by s.sale_date
         ) as rn
     from sales as s
     inner join customers as c on s.customer_id = c.customer_id
@@ -172,7 +173,7 @@ select
 from tab
 where rn = 1;
 
-/* 
+/*
 
 Мне не понравилось делать дашборд и презентацию с имеющимися данными,
 поэтому я сделал ещё несколько выборок:
