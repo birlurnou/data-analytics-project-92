@@ -18,7 +18,7 @@ select
 from sales as s
 inner join products as p on s.product_id = p.product_id
 inner join employees as e on s.sales_person_id = e.employee_id
-group by s.sales_person_id, concat(e.first_name, ' ', e.last_name)
+group by s.sales_person_id -- убрал лишнюю группировку
 order by income desc limit 10;
 
 
@@ -26,103 +26,86 @@ order by income desc limit 10;
 
 /*
 
-total_avg_income - табличное выражение со средней выручкой по всем продавцам.
-avg_income - табличное выражение со средней выручкой каждого из продавцов.
-В основном запросе я делаю выборку продавцов и их средней выручки.
-Для продавцов, чья средняя выручка ниже средней выручки по всем продавцам.
+tab - все сотрудники и их средняя выручка
+В основном запросе отсеиваем тех, чья средняя выручка выше средней выручки по 
+всем сотрудникам
 
 */
 
-with total_avg_income as (
-    select avg(s.quantity * p.price) as total_avg
-    from sales as s
-    inner join products as p on s.product_id = p.product_id
-),
-
-avg_income as (
+with tab as (
     select
-        concat(e.first_name, ' ', e.last_name) as seller,
+        e.first_name || ' ' || e.last_name as seller,
         floor(sum(s.quantity * p.price) / count(s.sales_id)) as average_income
     from sales as s
-    inner join products as p on s.product_id = p.product_id
     inner join employees as e on s.sales_person_id = e.employee_id
+    inner join products as p on s.product_id = p.product_id
     group by e.employee_id
 )
 
 select
-    ai.seller,
-    ai.average_income
-from avg_income as ai
-cross join total_avg_income as tai
-where ai.average_income < tai.total_avg
-order by ai.average_income;
-
+    seller,
+    average_income
+from tab
+where
+    average_income < (
+        select avg(s.quantity * p.price)
+        from sales as s
+        inner join products as p on s.product_id = p.product_id
+    )
+order by average_income;
 
 -- 3 отчёт (day_of_the_week_income)
 
 /*
 
-tab1 - таблица с id продажи и номером дня недели.
-В ней я меняю порядковый номер "sunday" с 0 на 7.
-В tab2 я формирую табличное выражение со всеми данными и сортирую данные в нём.
-В основном запросе я делаю выборку только того, что требуется в отчёте.
+Переделал запрос.
+Без cte/подзапроса не получилось, так как требуется отсортировать по дню недели.
+Тогда мне нужно в выборку включать номер дня недели, которого не должно быть
+в итоговой таблице.
 
 */
 
-with tab1 as (
+with tab as (
     select
-        s.sales_id,
-        case extract(dow from s.sale_date)
-            when 0 then 7
-            else extract(dow from s.sale_date)
-        end as day_number
-    from sales as s
-),
-
-tab2 as (
-    select
-        e.employee_id,
-        t1.day_number,
-        concat(e.first_name, ' ', e.last_name) as seller,
+        e.first_name || ' ' || e.last_name as seller,
         to_char(s.sale_date, 'day') as day_of_week,
+        extract(isodow from s.sale_date) as number_of_day,
         floor(sum(s.quantity * p.price)) as income
     from sales as s
-    inner join tab1 as t1 on s.sales_id = t1.sales_id
     inner join products as p on s.product_id = p.product_id
     inner join employees as e on s.sales_person_id = e.employee_id
-    group by e.employee_id, t1.day_number, to_char(s.sale_date, 'day')
-    order by t1.day_number, seller
+    group by
+        e.employee_id,
+        to_char(s.sale_date, 'day'),
+        extract(isodow from s.sale_date)
+    order by number_of_day, seller
 )
 
 select
     seller,
     day_of_week,
     income
-from tab2;
+from tab;
 
 -- Анализ покупателей
 
 -- 1 отчёт (age_groups)
--- Объединение трёх подзапросов, каждый из которых считает количество 
--- покупателей в определённом возрастном диапазоне.
+-- Сделал вместо объединения трёх запросов один запрос
 
-(select
-    '16-25' as age_category,
+select
+    case
+        when age between 16 and 25 then '16-25'
+        when age between 26 and 40 then '26-40'
+        when age > 40 then '40+'
+    end as age_category,
     count(*) as age_count
 from customers
-where age between 16 and 25)
-union
-(select
-    '26-40' as age_category,
-    count(*) as age_count
-from customers
-where age between 26 and 40)
-union
-(select
-    '40+' as age_category,
-    count(*) as age_count
-from customers
-where age > 40)
+group by
+    case
+        when age between 16 and 25 then '16-25'
+        when age between 26 and 40 then '26-40'
+        when age > 40 then '40+'
+    end
 order by age_category;
 
 -- 2 отчёт (customers_by_month)
