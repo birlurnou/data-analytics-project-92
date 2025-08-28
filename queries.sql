@@ -177,129 +177,127 @@ where rn = 1;
 
 -- топ-10 самых продаваемых продуктов
 
-select 
+select
     products.name as product_name,
     sum(sales.quantity) as quantity,
-    floor(sum(sales.quantity*products.price)) as total_amount
+    floor(sum(sales.quantity * products.price)) as total_amount
 from sales
-inner join products on products.product_id = sales.product_id
+inner join products on sales.product_id = products.product_id
 group by products.name
 order by total_amount desc limit 10;
 
 -- топ-10 наименее продаваемых продуктов
 
-select 
+select
     products.name as product_name,
     sum(sales.quantity) as quantity,
-    floor(sum(sales.quantity*products.price)) as total_amount
+    floor(sum(sales.quantity * products.price)) as total_amount
 from sales
-inner join products on products.product_id = sales.product_id
+inner join products on sales.product_id = products.product_id
 where products.price <> 0
 group by products.name
 order by total_amount asc limit 10;
 
 -- доля выручки с каждого продукта
 
-select 
+select
     products.name as product_name,
-    floor(sum(sales.quantity*products.price)) as total_amount
+    floor(sum(sales.quantity * products.price)) as total_amount
 from sales
-inner join products on products.product_id = sales.product_id
+inner join products on sales.product_id = products.product_id
 group by products.name
 order by total_amount desc;
 
 -- топ-10 клиентов
 
-select 
+select
     customers.first_name || ' ' || customers.last_name as customer,
     sum(sales.quantity) as total_quantity,
-    floor(sum(sales.quantity*products.price)) as total_amount
+    floor(sum(sales.quantity * products.price)) as total_amount
 from sales
-inner join customers on customers.customer_id = sales.customer_id
-inner join products on products.product_id = sales.product_id
+inner join customers on sales.customer_id = customers.customer_id
+inner join products on sales.product_id = products.product_id
 group by customers.first_name || ' ' || customers.last_name
 order by total_amount desc limit 10;
 
 -- вклад клиентов по возрастной группе
 
-(select 
+(select
     '16-25' as age_category,
     sum(sales.quantity) as total_quantity,
-    floor(sum(sales.quantity*products.price)) as total_amount
+    floor(sum(sales.quantity * products.price)) as total_amount
 from sales
-inner join customers on customers.customer_id = sales.customer_id
-inner join products on products.product_id = sales.product_id
+inner join customers on sales.customer_id = customers.customer_id
+inner join products on sales.product_id = products.product_id
 where customers.age between 16 and 25)
 union
-(select 
+(select
     '26-40' as age_category,
     sum(sales.quantity) as total_quantity,
-    floor(sum(sales.quantity*products.price)) as total_amount
+    floor(sum(sales.quantity * products.price)) as total_amount
 from sales
-inner join customers on customers.customer_id = sales.customer_id
-inner join products on products.product_id = sales.product_id
+inner join customers on sales.customer_id = customers.customer_id
+inner join products on sales.product_id = products.product_id
 where customers.age between 26 and 40)
 union
-(select 
+(select
     '40+' as age_category,
     sum(sales.quantity) as total_quantity,
-    floor(sum(sales.quantity*products.price)) as total_amount
+    floor(sum(sales.quantity * products.price)) as total_amount
 from sales
-inner join customers on customers.customer_id = sales.customer_id
-inner join products on products.product_id = sales.product_id
-where customers.age > 40)
-;
+inner join customers on sales.customer_id = customers.customer_id
+inner join products on sales.product_id = products.product_id
+where customers.age > 40);
 
 -- топ-10 товаров каждой возрастной группы
 
-(select 
+(select
     '16-25' as age_category,
     products.name as product_name,
     sum(sales.quantity) as total_quantity,
-    floor(sum(sales.quantity*products.price)) as total_amount
+    floor(sum(sales.quantity * products.price)) as total_amount
 from sales
-inner join customers on customers.customer_id = sales.customer_id
-inner join products on products.product_id = sales.product_id
+inner join customers on sales.customer_id = customers.customer_id
+inner join products on sales.product_id = products.product_id
 where customers.age between 16 and 25
 group by products.name
 order by total_amount desc, total_quantity desc limit 10)
 union
-(select 
+(select
     '26-40' as age_category,
     products.name as product_name,
     sum(sales.quantity) as total_quantity,
-    floor(sum(sales.quantity*products.price)) as total_amount
+    floor(sum(sales.quantity * products.price)) as total_amount
 from sales
-inner join customers on customers.customer_id = sales.customer_id
-inner join products on products.product_id = sales.product_id
+inner join customers on sales.customer_id = customers.customers
+inner join products on sales.product_id = products.product_id
 where customers.age between 26 and 40
 group by products.name
 order by total_amount desc, total_quantity desc limit 10)
 union
-(select 
+(select
     '40+' as age_category,
     products.name as product_name,
     sum(sales.quantity) as total_quantity,
-    floor(sum(sales.quantity*products.price)) as total_amount
+    floor(sum(sales.quantity * products.price)) as total_amount
 from sales
-inner join customers on customers.customer_id = sales.customer_id
-inner join products on products.product_id = sales.product_id
+inner join customers on sales.customer_id = customers.customer_id
+inner join products on sales.product_id = products.product_id
 where customers.age > 40
 group by products.name
 order by total_amount desc, total_quantity desc limit 10)
-order by age_category asc, total_amount desc, total_quantity desc
-;
+order by age_category asc, total_amount desc, total_quantity desc;
 
 -- все сотрудники (для исследования взаимосвязи)
 
-select 
+select
     employees.first_name || ' ' || employees.last_name as seller,
     sum(sales.sales_id) as sale_count,
     sum(sales.quantity) as total_quantity,
-    floor(sum(sales.quantity*products.price)) as total_amount
+    floor(sum(sales.quantity * products.price)) as total_amount
 from sales
-inner join products on products.product_id = sales.product_id
-inner join employees on employees.employee_id = sales.sales_person_id
+inner join products on sales.product_id = products.product_id
+inner join employees on sales.sales_person_id = employees.employee_id
 group by employees.first_name || ' ' || employees.last_name
 order by total_amount desc;
 
